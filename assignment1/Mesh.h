@@ -4,51 +4,57 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <sstream>
+#include <map>
+#include <assert.h>
 
-typedef unsigned int uint;
-
-// for pointer in struct to point to itself
+// Forward declare these
 typedef struct HEEdge HEEdge;
+typedef struct HEFace HEFace;
 
 //data structure of indexed face set
-typedef struct {
+struct Vertex {
 	//3d coordinates
 	float x;
 	float y;
 	float z;
-} Vertex;
+} ;
 
-typedef struct{
+struct Face{
 	//three vertex ids
 	uint a,b,c;
-} Face;
+};
+
+struct Edge{
+	Vertex v1;
+	Vertex v2;
+};
 
 // data structure of Halfedge
 // http://www.openmesh.org/Documentation/OpenMesh-Doc-Latest/a00016.html
 
-typedef struct {
+struct HEVertex{
 	//add members here
+	Vertex vertex;
 	HEEdge* edge; 
 
-} HEVertex;
+};
 
 struct HEEdge{
 	//add members here
 
-	Face* face;
+	HEFace* face;
 	HEVertex* vertex;
 	HEEdge* opposite;
 	HEEdge* next;
 
 };
 
-typedef struct {
+struct HEFace {
 	
-	HEEdge* Edge;
+	HEEdge* edge;
 
-} HEFace;
+};
 
 class Mesh{
 private:
