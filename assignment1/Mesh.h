@@ -40,6 +40,7 @@ struct HEVertex{
 
 };
 
+
 struct HEEdge{
 	//add members here
 
@@ -47,13 +48,14 @@ struct HEEdge{
 	HEVertex* vertex;
 	HEEdge* opposite;
 	HEEdge* next;
+	int id;
 
 };
 
 struct HEFace {
 	
 	HEEdge* edge;
-
+	int id;
 };
 
 class Mesh{
@@ -85,5 +87,7 @@ public:
 	int Vcnt();
 	//return face count
 	int Fcnt();
+
+
 };
 #endif
