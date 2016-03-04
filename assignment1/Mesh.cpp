@@ -4,9 +4,20 @@ Mesh::Mesh(const char* filename){
 	loadMF(filename);
 }
 
+bool operator<(const HEVertex& hev1, const HEVertex& hev2) {
+		
+	if(hev1.x < hev2.x) return true;
+	if(hev1.x > hev2.x) return false;
+	// Otherwise equal
+	if(hev1.y < hev2.y) return true;
+	if(hev1.y > hev2.y) return false;
 
-bool operator<(const HEVertex hev1, const HEVertex hev2) {
-	return hev1.vertex.x < hev2.vertex.x;
+	// Otherwise equal
+	if(hev1.z < hev2.z) return true;
+	if(hev1.z > hev2.z) return false;
+
+	return false;
+
 }
 
 void Mesh::loadMF(const char* filename){
@@ -62,94 +73,156 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
 /* Convert the mesh into the half-edge data structure*/
 void Mesh::convertMesh(){
 
-	//int count = 0;
 
-	std::map<std::pair<int,int>, HEEdge> edges;
-	std::map<int, HEVertex> added_vertices;
+	std::map<std::pair<int,int>, HEEdge*> edges;
+	std::map<int, HEVertex*> added_vertices;
 
 	// Go through all faces
 	for(int i = 0; i < F.size(); i++){
 
-		//count++;
-
 		// Declare the three half edges, assume that the vertices
 		// is declared in a clockwise order
-		HEEdge _halfedge1 = {}, _halfedge2 = {}, _halfedge3 = {};
-		HEVertex _hevertex1 = {}, _hevertex2 = {}, _hevertex3 = {};
-		HEFace _heface = {};
+		HEFace* _heface = new HEFace();
+
+		HEVertex* _hevertex1 = new HEVertex();
+		HEVertex* _hevertex2 = new HEVertex();
+		HEVertex* _hevertex3 = new HEVertex();
+
+		HEEdge* _halfedge1 = new HEEdge();
+		HEEdge* _halfedge2 = new HEEdge();
+		HEEdge* _halfedge3 = new HEEdge();
+
+		// HEFace
+		_heface->edge = _halfedge1; 
+		_heface->id = i;
+		HEF.push_back(*_heface);
+
+		// Get HEVertex and HEEdge
+		_hevertex1->x = V[F[i].a].x;
+		_hevertex1->y = V[F[i].a].y;
+		_hevertex1->z = V[F[i].a].z;
+
+		// Get HEVertex and HEEdge
+		_hevertex2->x = V[F[i].b].x;
+		_hevertex2->y = V[F[i].b].y;
+		_hevertex2->z = V[F[i].b].z;
+
+		// Get HEVertex and HEEdge
+		_hevertex3->x = V[F[i].c].x;
+		_hevertex3->y = V[F[i].c].y;
+		_hevertex3->z = V[F[i].c].z;
+
+		_halfedge3->vertex = _hevertex1;
+		_hevertex1->edge = _halfedge1;
+
+		_hevertex2->edge = _halfedge2;
+		_halfedge2->vertex = _hevertex2;
+
+		_hevertex3->edge = _halfedge3;
+		_halfedge1->vertex = _hevertex3;
 
 		// Check if vertices is added alread
 		if(added_vertices.find(F[i].a) == added_vertices.end()){
 
-			_hevertex1.vertex = V[F[i].a];
-			_hevertex1.edge = &_halfedge1;
-			_halfedge3.vertex = &_hevertex1;
 			added_vertices[F[i].a] = _hevertex1;
-			HEV.push_back(_hevertex1);
+			HEV.push_back(*_hevertex1);
 
-		} else {
+		} 
+		/*else {
 
-			_halfedge3.vertex = &added_vertices[F[i].a];
-			//std::cout << " Vertex num " << F[i].a << " already existed and halfedge3 pointing there: " << _halfedge3.vertex->vertex.x << std::endl;
-
+					
+			//_hevertex1 = added_vertices[F[i].a];
+			
+			//halfedge3->vertex = added_vertices[F[i].a];
+			
+			if(F[i].a == 2306){
+				std::cout << "GETTING VERTEX NUMBER 2306 in a" << std::endl;
+				std::cout << " Vertex num " << F[i].a << " already existed and halfedge3 pointing there: " << _halfedge3->vertex->x << std::endl;
+			}
 		}
+*/
 
-
-		// Check if vertices is added alread
+		// Check if vertices is added 
 		if(added_vertices.find(F[i].b) == added_vertices.end()){
 
-			_hevertex2.vertex = V[F[i].b];
-			_hevertex2.edge = &_halfedge2;
-			_halfedge2.vertex = &_hevertex2;
-			added_vertices[F[i].b] = _hevertex2;
-			HEV.push_back(_hevertex2);
-
-		} else {
-
 			
-			_halfedge2.vertex = &added_vertices[F[i].b];
-		//	std::cout << " Vertex num " << F[i].b << " already existed and halfedge2 pointing there: " << _halfedge2.vertex->vertex.x << std::endl;
+			added_vertices[F[i].b] = _hevertex2;
+			HEV.push_back(*_hevertex2);
 
-		}
+		} /*else {
+
+
+			//_halfedge2->vertex = added_vertices[F[i].b];
+		
+		}*/
 
 		// Check if vertices is added alread
 		if(added_vertices.find(F[i].c) == added_vertices.end()){
 
-			_hevertex3.vertex = V[F[i].c];
-			_hevertex3.edge = &_halfedge3;
-			_halfedge1.vertex = &_hevertex3;
 			added_vertices[F[i].c] = _hevertex3;
-			HEV.push_back(_hevertex3);
+			HEV.push_back(*_hevertex3);
 
-		} else {
-			_halfedge1.vertex = &added_vertices[F[i].c];
-		//	std::cout << " Vertex num " << F[i].c << " already existed and halfedge1 pointing there: " << _halfedge1.vertex->vertex.x << std::endl;
+		} /*else {
+			
+			//_halfedge1->vertex = added_vertices[F[i].c];
+		}*/
 
-		}
+		/*if(i == 4785){
 
-		_halfedge1.next = &_halfedge2;
-		_halfedge2.next = &_halfedge3;
-		_halfedge3.next = &_halfedge1;
+			std::cout << "F[i].a " << F[i].a << std::endl;
+			std::cout << "F[i].b " << F[i].b << std::endl;
+			std::cout << "F[i].c " << F[i].c << std::endl;
 
-		_halfedge1.face = &_heface;
-		_halfedge2.face = &_heface;
-		_halfedge3.face = &_heface;
+			std::cout << "V[F[i].a].x " << V[F[i].a].x << std::endl;
+			std::cout << "V[F[i].b].x " << V[F[i].b].x << std::endl;
+			std::cout << "V[F[i].c].x " << V[F[i].c].x << std::endl;
 
 
-		std::cout << " << face has : " << F[i].a << " , " << F[i].b << " , " << F[i].c << std::endl
+			std::cout << "V[F[i].a].x " << V[F[i].a].y << std::endl;
+			std::cout << "V[F[i].b].x " << V[F[i].b].y << std::endl;
+			std::cout << "V[F[i].c].x " << V[F[i].c].y << std::endl;
+
+
+			std::cout << "V[F[i].a].x " << V[F[i].a].z << std::endl;
+			std::cout << "V[F[i].b].x " << V[F[i].b].z << std::endl;
+			std::cout << "V[F[i].c].x " << V[F[i].c].z << std::endl;
+
+
+			std::cout << "hevertex1x : " << _hevertex1->x << std::endl;
+			std::cout << "hevertex1y : " << _hevertex1->y << std::endl;
+			std::cout << "hevertex1z : " << _hevertex1->z << std::endl;
+
+			std::cout << "hevertex2x : " << _hevertex2->x << std::endl;
+			std::cout << "hevertex2y: "  << _hevertex2->y << std::endl;
+			std::cout << "hevertex2z : " << _hevertex2->z << std::endl;
+
+			std::cout << "hevertex3x : " << _hevertex3->x << std::endl;
+			std::cout << "hevertex3y : " << _hevertex3->y << std::endl;
+			std::cout << "hevertex3z : " << _hevertex3->z << std::endl;
+
+		}*/
+
+		// Next
+		_halfedge1->next = _halfedge2;
+		_halfedge2->next = _halfedge3;
+		_halfedge3->next = _halfedge1;
+
+		// Face
+		_halfedge1->face = _heface;
+		_halfedge2->face = _heface;
+		_halfedge3->face = _heface;
+
+
+	/*	std::cout << " << face has : " << F[i].a << " , " << F[i].b << " , " << F[i].c << std::endl
 				  << " and vertices x pos " << V[F[i].a].x << " , " << V[F[i].b].x << " , " << V[F[i].c].x << std::endl; 
 
 		std::cout << " Pushing back _heface with edges: " << std::endl
-				  << " halfedge 1 pointing to vertex x pos  " << _halfedge1.vertex->vertex.x << std::endl
-				  << " halfedge 2 pointing to vertex x pos " << _halfedge2.vertex->vertex.x << std::endl
-				  << " halfedge 3 pointing to vertex x pos " << _halfedge3.vertex->vertex.x << std::endl;
+				  << " halfedge 1 pointing to vertex x pos  " << _halfedge1.vertex->x << std::endl
+				  << " halfedge 2 pointing to vertex x pos " << _halfedge2.vertex->x << std::endl
+				  << " halfedge 3 pointing to vertex x pos " << _halfedge3.vertex->x << std::endl;
 
-	 	std::cout << " ===================================  " << std::endl;
+	 	std::cout << " ===================================  " << std::endl;*/
 		
-
-		std::cout << "YAo 1 " <<  _halfedge1.next->vertex->vertex.x << std::endl;
-		std::cout << "YAo 2 " <<  _halfedge2.next->vertex->vertex.x << std::endl;
-		std::cout << "YAo 3 " <<  _halfedge3.next->vertex->vertex.x << std::endl;
 
 		//std::cout << "face? " << _heface.edge->next->vertex->vertex.x << std::endl;
 
@@ -157,52 +230,36 @@ void Mesh::convertMesh(){
 		edges[std::make_pair(F[i].b, F[i].c)] = _halfedge2;
 		edges[std::make_pair(F[i].c, F[i].a)] = _halfedge3;
 
-		HEE.push_back(_halfedge1);
-		HEE.push_back(_halfedge2);
-		HEE.push_back(_halfedge3);
+		HEE.push_back(*_halfedge1);
+		HEE.push_back(*_halfedge2);
+		HEE.push_back(*_halfedge3);
 
-		_halfedge1.id = 1;
-		_halfedge2.id = 2;
-		_halfedge3.id = 3;
-
-		// If opposite edge
+		// If opposite edge has been added
 		if(edges.find(std::make_pair(F[i].b, F[i].a)) != edges.end()){
 
-			edges[std::make_pair(F[i].a, F[i].b)].opposite = &edges[std::make_pair(F[i].b, F[i].a)];
-			edges[std::make_pair(F[i].b, F[i].a)].opposite = &edges[std::make_pair(F[i].a, F[i].b)];
+			edges[std::make_pair(F[i].a, F[i].b)]->opposite = edges[std::make_pair(F[i].b, F[i].a)];
+			edges[std::make_pair(F[i].b, F[i].a)]->opposite = edges[std::make_pair(F[i].a, F[i].b)];
 
 		}
 
-		// If opposite edge
 		if(edges.find(std::make_pair(F[i].c, F[i].b)) != edges.end()){
 
-			edges[std::make_pair(F[i].b, F[i].c)].opposite = &edges[std::make_pair(F[i].c, F[i].b)];
-			edges[std::make_pair(F[i].c, F[i].b)].opposite = &edges[std::make_pair(F[i].b, F[i].c)];
+			edges[std::make_pair(F[i].b, F[i].c)]->opposite = edges[std::make_pair(F[i].c, F[i].b)];
+			edges[std::make_pair(F[i].c, F[i].b)]->opposite = edges[std::make_pair(F[i].b, F[i].c)];
 
 		}
 
-		// If opposite edge
 		if(edges.find(std::make_pair(F[i].a, F[i].c)) != edges.end()){
 
-			edges[std::make_pair(F[i].c, F[i].a)].opposite = &edges[std::make_pair(F[i].a, F[i].c)];
-			edges[std::make_pair(F[i].a, F[i].c)].opposite = &edges[std::make_pair(F[i].c, F[i].a)];
+			edges[std::make_pair(F[i].c, F[i].a)]->opposite = edges[std::make_pair(F[i].a, F[i].c)];
+			edges[std::make_pair(F[i].a, F[i].c)]->opposite = edges[std::make_pair(F[i].c, F[i].a)];
 
 		}
-
-
-		// HEFace
-		_heface.edge = &_halfedge1;
-		_heface.id = 1;
-		std::cout << "edge lah" << _halfedge1.vertex->vertex.x << std::endl;;
-		
-		HEF.push_back(_heface);
-
-		
 
 	}
 
 	std::cout << "V size " << V.size() << std::endl;
-	std::cout << "HEV size " << HEV.size() << std::endl;
+	
 
 	//assert(V.size() == HEV.size());
 	assert(F.size() == HEF.size());
@@ -216,19 +273,25 @@ void Mesh::revertMesh(){
 
 	//std::map<std::pair<int, int>, HEEdge> added_edges;
 	//std::map<Vertex, Vertex> added_vertices;
+
 	std::map<HEVertex, int> indices;
+
+	std::cout << "HEV size " << HEV.size() << std::endl;
 
 	for(int i = 0; i < HEV.size(); i++){
 
 		//std::cout << "hev vertex x : " << HEV[i].vertex.x << std::endl;
-		V.push_back(HEV[i].vertex);
+		Vertex v = {};
+		v.x = HEV[i].x;
+		v.y = HEV[i].y;
+		v.z = HEV[i].z;
+		V.push_back(v);
 		indices[HEV[i]] = i;
 	}
 
-	//assert(V.size() == HEV.size());
+	std::cout << " map size " << indices.size() << std::endl;
 
-	std::cout << "HEF SIZE " << HEF.size() << std::endl;
-	std::cout << "first id debug " << HEF[0].edge->id<< std::endl;
+	assert(V.size() == HEV.size());	
 
 	for(int i = 0; i < HEF.size(); i++){
 
@@ -236,29 +299,31 @@ void Mesh::revertMesh(){
 
 		HEFace _heface = HEF[i];
 		HEEdge* _halfedge1 = _heface.edge;
-		//std::cout << " yeha " << _halfedge1->vertex->vertex.x << std::endl;
-		//HEVertex* _hevertex2 = _halfedge1->vertex;
-		//HEVertex* _hevertex3 = _halfedge1->next->vertex;
 
-		//std::cout << "vertex x coords " << _halfedge1->vertex->vertex.x << std::endl;
-//		std::cout << "vertex x next coords " << _hevertex3->vertex.x << std::endl;
+		HEVertex* _hevertex3 = _halfedge1->vertex;
+		HEVertex* _hevertex2 = _halfedge1->next->vertex;
+		HEVertex* _hevertex1 = _halfedge1->next->next->vertex; 
+		
+		f.a = indices[*_hevertex1];
+		f.b = indices[*_hevertex2];
+		f.c = indices[*_hevertex3];
 
-	
-//		HEVertex hv1 = *e->next->next->vertex;
+		if(f.a == f.b||f.b == f.c||f.c == f.a){
 
-//		f.a = indices[hv1];
-//		f.b = indices[hv2];
-//		f.c = indices[hv3];
 
-		//std::cout << "f.a " << f.a << std::endl;
-		//std::cout << "f.b " << f.b << std::endl;
-		//std::cout << "f.c " << f.c << std::endl;
+			std::cout << "f.a " << f.a << std::endl;
+			std::cout << "f.b " << f.b << std::endl;
+			std::cout << "f.c " << f.c << std::endl;
+			std::cout << "at face with id " << HEF[i].id << std::endl;
+			std::cout << "================================================" << std::endl;
+			
+		} 		
 
-//		F.push_back(f);
+		F.push_back(f);
 
 	}
 
-	//assert(HEF.size() == F.size());
+	assert(HEF.size() == F.size());
 
 
 }

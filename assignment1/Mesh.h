@@ -23,6 +23,7 @@ struct Vertex {
 struct Face{
 	//three vertex ids
 	uint a,b,c;
+	int id;
 };
 
 struct Edge{
@@ -35,7 +36,7 @@ struct Edge{
 
 struct HEVertex{
 	//add members here
-	Vertex vertex;
+	float x, y, z;
 	HEEdge* edge; 
 
 };
