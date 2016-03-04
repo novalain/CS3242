@@ -36,7 +36,7 @@ struct Edge{
 
 struct HEVertex{
 	//add members here
-	float x, y, z;
+	Vertex vertex;
 	HEEdge* edge; 
 
 };
