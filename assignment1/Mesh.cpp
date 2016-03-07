@@ -47,30 +47,19 @@ std::vector<HEVertex*> Mesh::getNeighbourVertices(HEVertex* v){
 
 	std::vector<HEVertex*> tmp;
 
-	if(!v){
+	/*if(!v){
 		std::cout << "Vertex is null, no neighbours" << std::endl;
 		return tmp;
-	}
+	}*/
 
-
-	//HEEdge* first = v->edge;
-	//HEEdge* curr = v->edge->opposite->next;
 	HEEdge* curr = v->edge;
 	HEEdge* first = v->edge;
 
-	std::cout << "does first exits " << first->exists << std::endl;
-
 	if(!first || !first->exists){
-		std::cout << "Invalid edge, no neighbours" << std::endl;
+		//std::cout << "Invalid edge, no neighbours" << std::endl;
 		return tmp;
-	} else {
-
-		std::cout << "first does exists with id " << first->id << std::endl;
-
 	}
 
-	//std::cout << "BEFORE LOOP FIRST " << first->id << std::endl;
-	//std::cout << "BEFORE LOOP vertex " << *first->hevertex << std::endl;
 
 	int count = 0;
 
@@ -79,14 +68,7 @@ std::vector<HEVertex*> Mesh::getNeighbourVertices(HEVertex* v){
 		tmp.push_back(curr->hevertex);
 		curr = curr->opposite->next;
 
-		/*if(count > 20 ){
-			std::cout << " IN CHECK STUCK AT " << first->id << std::endl;
-		}
-		count++;*/
-
 	} while(*curr != *first);
-
-	//std::cout << "DONE MOTHERFUCKER " << std::endl;
 
 	return tmp;
 }
@@ -106,8 +88,6 @@ int Mesh::countCommonVertices(HEVertex* v1, HEVertex* v2){
 		
 		}
 	}
-
-	std::cout << "Count common vertices? :  " << count << std::endl;
 
 	return count;
 
@@ -146,29 +126,96 @@ void Mesh::debugAdjacentEdges(){
 
 			curr = curr->opposite->next;
 
-			/*if(count > 20 ){
-				
-				std::cout << "edge " << first->id << " is STUCK!" << std::endl;
-
-			}
-
-			count++;*/
-
 		} while(*curr != *first);
 
 	}
 
 }
 
+void Mesh::collapseEdge(HEEdge* edgeToRemove){
+
+	HEEdge* edgeToRemoveTwin = edgeToRemove->opposite;
+	HEVertex* hevertex1 = edgeToRemove->hevertex;
+	HEVertex* hevertex2 = edgeToRemoveTwin->hevertex;
+
+	// Get faces that share the end point of this edge
+	// Get faces that borders this edge
+	HEEdge* e_next = edgeToRemove->next;
+	HEEdge* e_prev = edgeToRemove->next->next;
+	HEEdge* e_next_twin = e_next->opposite;
+	HEEdge* e_prev_twin = e_prev->opposite;
+
+	HEEdge* et_next = edgeToRemoveTwin->next;
+	HEEdge* et_prev = edgeToRemoveTwin->next->next;
+	HEEdge* et_next_twin = et_next->opposite;
+	HEEdge* et_prev_twin = et_prev->opposite;
+
+	// Fix surrounding edges that points to vertex that's removed
+	HEEdge* curr = hevertex1->edge->opposite;
+	HEEdge* first = hevertex1->edge->opposite;
+
+	// Reassign all incoming vertices from removed one to next
+	do {
+		curr->hevertex = hevertex2;
+		curr = curr->next->opposite;
+	} while(*curr != *first);
+
+	if(*hevertex2->edge == *edgeToRemove||*hevertex2->edge == *e_next){
+		hevertex2->edge = et_prev->opposite;
+		//std::cout << "** Reassignment of remaining vertex outedge" << std::endl;
+	}
+
+	// Bind together these
+	e_next_twin->opposite = e_prev_twin;
+	e_prev_twin->opposite = e_next_twin;
+	
+	et_next_twin->opposite = et_prev_twin;
+	et_prev_twin->opposite = et_next_twin;
+	
+	for(auto edge : HEE){
+		assert(*edge->hevertex != *hevertex1);
+	}
+
+	// Run some tests
+	assert(*et_prev_twin->opposite == *et_next_twin);
+	assert(*et_next_twin->opposite == *et_prev_twin); 
+	assert(*e_next_twin->opposite == *e_prev_twin);
+	assert(*e_prev_twin->opposite == *e_next_twin); 
+	assert(*hevertex2->edge!=*edgeToRemove||*hevertex2->edge!=*e_next);
+	assert(*e_next_twin->hevertex != *hevertex1);
+
+	HEV.erase(hevertex1);
+
+	HEF.erase(edgeToRemove->face);
+	HEF.erase(edgeToRemoveTwin->face);
+
+	HEE.erase(edgeToRemove);
+	HEE.erase(e_next);
+	HEE.erase(e_prev);
+	HEE.erase(edgeToRemoveTwin);
+	HEE.erase(et_next);
+	HEE.erase(et_prev);
+
+	edgeToRemove->exists = false;
+	e_next->exists = false;
+	e_prev->exists = false;
+	edgeToRemoveTwin->exists = false;
+	et_next->exists = false;
+	et_prev->exists = false;
+
+}
+
 void Mesh::collapseRandomEdges(const int faceCnt){
 
 	int removedFaces = 0, removedEdges = 0, removedVertices = 0;
+	int timeout = 0;
 
 	// As long as too many faces
 	while(HEF.size() > faceCnt){
 	//for(int i = 0; i < HEF.size(); i++){
 		// Select a random edge to remove
 		int random_index = rand() % HEE.size();
+		//TODO : int currentEdgeIndex = computeEdgeCost();
 
 		std::set<HEEdge*>::iterator it(HEE.begin());
 		advance(it, random_index);
@@ -177,110 +224,32 @@ void Mesh::collapseRandomEdges(const int faceCnt){
 
 		if(canEdgeCollapse(edgeToRemove)){ 
 
-			std::cout << "** Can remove edge with id " << edgeToRemove->id << std::endl;
 
-			HEEdge* edgeToRemoveTwin = edgeToRemove->opposite;
-			HEVertex* hevertex1 = edgeToRemove->hevertex;
-			HEVertex* hevertex2 = edgeToRemoveTwin->hevertex;
+			timeout = 0;
+			collapseEdge(edgeToRemove);
 
-			// Get faces that share the end point of this edge
-			// Get faces that borders this edge
+		} else{
 
-			HEEdge* e_next = edgeToRemove->next;
-			HEEdge* e_prev = edgeToRemove->next->next;
-			HEEdge* e_next_twin = e_next->opposite;
-			HEEdge* e_prev_twin = e_prev->opposite;
+			if(timeout++ > 10000){
 
-			HEEdge* et_next = edgeToRemoveTwin->next;
-			HEEdge* et_prev = edgeToRemoveTwin->next->next;
-			HEEdge* et_next_twin = et_next->opposite;
-			HEEdge* et_prev_twin = et_prev->opposite;
+				std::cout << "Whops no more valid triangles to reduce .. Please try a higher faceCnt" << std::endl;
+				cleanUp();
+				return;
 
-			// Fix surrounding edges that points to vertex that's removed
-			HEEdge* curr = hevertex1->edge->opposite;
-			HEEdge* first = hevertex1->edge->opposite;
-
-			// Reassign all incoming vertices from removed one to next
-			do {
-				curr->hevertex = hevertex2;
-				curr = curr->next->opposite;
-			} while(*curr != *first);
-
-			if(*hevertex2->edge == *edgeToRemove||*hevertex2->edge == *e_next){
-				hevertex2->edge = et_prev->opposite;
-				std::cout << "** Reassignment of remaining vertex outedge" << std::endl;
 			}
-
-			// Bind together these
-			e_next_twin->opposite = e_prev_twin;
-			e_prev_twin->opposite = e_next_twin;
 			
-			et_next_twin->opposite = et_prev_twin;
-			et_prev_twin->opposite = et_next_twin;
-			
-			for(auto edge : HEE){
-				assert(*edge->hevertex != *hevertex1);
-			}
-
-			// Run some tests
-			assert(*et_prev_twin->opposite == *et_next_twin);
-			assert(*et_next_twin->opposite == *et_prev_twin); 
-			assert(*e_next_twin->opposite == *e_prev_twin);
-			assert(*e_prev_twin->opposite == *e_next_twin); 
-			assert(*hevertex2->edge!=*edgeToRemove||*hevertex2->edge!=*e_next);
-			assert(*e_next_twin->hevertex != *hevertex1);
-
-			HEV.erase(hevertex1);
-
-			HEF.erase(edgeToRemove->face);
-			HEF.erase(edgeToRemoveTwin->face);
-
-			HEE.erase(edgeToRemove);
-			HEE.erase(e_next);
-			HEE.erase(e_prev);
-			HEE.erase(edgeToRemoveTwin);
-			HEE.erase(et_next);
-			HEE.erase(et_prev);
-
-/*			delete hevertex1;
-
-			delete edgeToRemove->face;
-			delete edgeToRemoveTwin->face;
-
-			delete edgeToRemoveTwin;
-			delete edgeToRemove;
-
-			delete e_next;
-			delete e_prev;
-			delete et_next;
-			delete et_prev;*/
-
-			//hevertex1->exists = false;
-
-			//edgeToRemove->face->exists = false;
-			//edgeToRemoveTwin->face->exists = false;
-
-			edgeToRemove->exists = false;
-			e_next->exists = false;
-			e_prev->exists = false;
-			edgeToRemoveTwin->exists = false;
-			et_next->exists = false;
-			et_prev->exists = false;
-
-			//debugAdjacentEdges();
-
-			std::cout << "** HEF size" << HEF.size() << std::endl;
-
-		} else {
-
-			std::cout << "not deleted" << std::endl;
 		}
 
 	}
 
 }
 	
-// faceCnt = max number of vertices
+void Mesh::cleanUp(){
+
+	// TODO. Leave it to garbage collector for now
+
+}
+
 void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
 	// you may assume inputs are always valid
 	loadMF(input);
@@ -288,8 +257,10 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
 	std::cout<<"Original face count: "<<HEF.size()<<std::endl;
 	// do mesh simplification here
 	collapseRandomEdges(faceCnt);
+	std::cout<<"Simplified face count:" << HEF.size()<<std::endl;
 	revertMesh();
 	writeMF(output);
+	cleanUp();
 }
 
 /* Convert the mesh into the half-edge data structure*/

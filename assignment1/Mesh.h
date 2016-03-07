@@ -46,9 +46,8 @@ struct Edge{
 	Vertex v2;
 };
 
-// data structure of Halfedge
+// Half-edge data structure
 // http://www.openmesh.org/Documentation/OpenMesh-Doc-Latest/a00016.html
-
 struct HEVertex{
 	//add members here
 	Vertex vertex;
@@ -185,7 +184,9 @@ public:
 	void collapseVertices(HEVertex* v1, HEVertex* v2);
 	void debugAdjacentEdges();
 	bool canEdgeCollapse(HEEdge* edge);
+	void collapseEdge(HEEdge* edgeToRemove);
 	int countCommonVertices(HEVertex* v1, HEVertex* v2);
+	void cleanUp();
 	//helper methods
 	std::vector<HEVertex*> getNeighbourVertices(HEVertex* v);
 	std::vector<HEFace*> neighborFaces(HEVertex* v);
