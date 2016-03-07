@@ -101,6 +101,7 @@ struct HEEdge{
 	HEEdge* opposite;
 	HEEdge* next;
 	int id;
+	bool exists;
 
 	bool operator==(HEEdge e) const {
 		return id == e.id;
@@ -182,6 +183,8 @@ public:
 	//collapse random
 	void collapseRandomEdges(const int faceCnt) ;
 	void collapseVertices(HEVertex* v1, HEVertex* v2);
+	void debugAdjacentEdges();
+	bool canEdgeCollapse(HEEdge* edge);
 	int countCommonVertices(HEVertex* v1, HEVertex* v2);
 	//helper methods
 	std::vector<HEVertex*> getNeighbourVertices(HEVertex* v);
