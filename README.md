@@ -1,2 +1,6 @@
-# CS3242
-Labs in CS3242 - 3D Modelling and Animation
+# mesh-simplification
+Mesh simplification using the half-edge data structure with random edge-collapse.
+
+To run:
+* Compile all .cpp files
+* Run ```./outfile input output faceCount```
